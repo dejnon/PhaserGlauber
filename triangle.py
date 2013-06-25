@@ -19,7 +19,8 @@ if os.system("gcc main.cpp -o main -lstdc++ -lgsl -lgslcblas") == 0:
   for w0 in W0_RANGE:
     for cmean in CM_RANGE:
       for csigma in CS_RANGE:
+          print "="*20+"\n"
           filename = "w0-%.4f_cmean-%.4f_csigma-%.4f_maxt-%d_l-%d.csv" % (w0, cmean, csigma, maxt, l)
           simul = "./main %d %d %f %f %f %d %d %d %s" % (maxt, l, w0, cmean, csigma, cmodename, verbose, averages, filename)
           p = os.system(simul)
-
+          print "="*20+"\n"
