@@ -2,6 +2,13 @@
 #include <algorithm>    // std::swap
 #include <math.h>
 #include <algorithm>
+#include <string>
+#include <stdio.h>
+#include <cctype>      // old <ctype.h>
+#include <sys/types.h>
+#include <time.h>
+#include <fstream>
+
 
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
@@ -19,6 +26,7 @@ static int LATICE_SIZE = 100;
 
 static double W0 = 0.1;
 static int C_MODE = DISTRIBUTION_GAUSS;
+static int AVERAGES = 10;
 static double C_MIU = 0.5;
 static double C_SIGMA = 0.1;
 
@@ -121,6 +129,14 @@ double bondDensity(short int arr[]) {
     return (double)sum / (double)(2*LATICE_SIZE);
 }
 
+int matnetization(short int arr[]) {
+    int sum = 0;
+    for (int i = 0; i < LATICE_SIZE; i++) {
+        sum += arr[i];
+    }
+    return sum;
+}
+
 double distribution(double miu, double sigma, int mode) {
     switch (mode) {
         case DISTRIBUTION_WELL:
@@ -172,11 +188,14 @@ void displayHelp() {
         << "[csigma]    - C-parameter's standard deviation (or c=[cmean-csigma; cmean+sigma]), (flt), [0,1]\n"
         << "[cmodename] - C-mode: 0-well / 1-gaussian / 2-uniform / 3-triangle, (int), {0,1,2,3}\n"
         << "[verbose]   - Display detailed system progression, (int), {0,1}\n"
+        << "[averages]  - How many iterations of given settings, (int)\n"
+        << "[file]  - File to write, (str)\n"
     ;
 }
 
 int main(int argc, const char * argv[]) {
-    if (argc < 8) {
+    std::cout << "==== NEW RUN ====\n";
+    if (argc < 9) {
         displayHelp();
         return 0;
     } else if (1 < argc) {
@@ -187,6 +206,7 @@ int main(int argc, const char * argv[]) {
         C_SIGMA     = atof(argv[5]);
         C_MODE      = atof(argv[6]);
         VERBOSE     = atoi(argv[7]);
+        AVERAGES    = atoi(argv[8]);
     } else {
         LATICE_SIZE = 100;
         W0 = 0.1;
@@ -194,88 +214,97 @@ int main(int argc, const char * argv[]) {
         C_MIU = 0.5;
         C_SIGMA = 0.1;
         MAX_TIME = 1000000;
+        AVERAGES = 10;
         VERBOSE = false;
     }
-
+    std::ofstream outputFile( argv[9] );
+    std::cout << "CHECKING FILE\n";
+        if (!outputFile) {
+        std::cout << argv[9] << "\n";
+        printf("ERR");
+        outputFile.close();
+        return 1;
+    }
+    
+    std::cout << "FILE OK\n";
+    
     gsl_rng_env_setup();
 
     T = gsl_rng_mt19937;
     r = gsl_rng_alloc (T);
+    long seed = time (NULL) * getpid();
+    gsl_rng_set(r, seed);
 
     begin = clock();
 
-    short * LATICE           = (short *)malloc(LATICE_SIZE*sizeof(short));;
-    short * NEXT_STEP_LATICE = (short *)malloc(LATICE_SIZE*sizeof(short));;
+    std::cout << "MT OK\n";
+    
+    short * LATICE           = (short *)malloc(LATICE_SIZE*sizeof(short));
+    short * NEXT_STEP_LATICE = (short *)malloc(LATICE_SIZE*sizeof(short));
 
-    initAntiferromagnet(LATICE);
+    std::cout << "INIT SIMULATION\n";
 
-    double start_rho = bondDensity(LATICE);
-    double rho=0, sum_rho=0;
-    double sum_c = 0;
+    for (int a = 1; a <= AVERAGES; a++) {
+        std::cout << "AVERAGE: " << a << "\n";
+        
+        initAntiferromagnet(LATICE);
+        double start_rho = bondDensity(LATICE);
+        double rho=0, sum_rho=0;
+        double sum_c = 0;
+        int magnetization = 0;
+        
+        for (int t = 1; t <= MAX_TIME; t++) {
+            if (VERBOSE) {
+                arrPrint(LATICE);printf("\n");
+            }
+            rho = bondDensity(LATICE);
 
-    for (int t = 1; t <= MAX_TIME; t++) {
-        if (VERBOSE) {
-            arrPrint(LATICE);printf("\n");
-        }
+            if (rho == 0.0 || t == MAX_TIME) {
+                end = clock();
+                time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+                outputFile << " " << C_MIU << " ";
+                outputFile << " " << C_SIGMA << " ";
+                outputFile << " " << t << " ";
+                outputFile << " " << monte_carlo_steps << " ";
+                outputFile << " " << matnetization(LATICE) << " ";
+                outputFile << " " << bondDensity(LATICE) << "\n";
 
-        rho = bondDensity(LATICE);
-        sum_rho += rho;
-
-        if (rho == 0.0 || t == MAX_TIME) {
-            double avg_rho = sum_rho / (double)t;
-            double avg_c = sum_c / (double)t;
-            end = clock();
-            time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-            std::cout << "maxt:"      << MAX_TIME << "\t   ";
-            std::cout << "l:"         << LATICE_SIZE << "\t    ";
-            std::cout << "w0:"        << W0 << "\t    ";
-            std::cout << "cmean:"     << C_MIU << "\t    ";
-            std::cout << "csigma:"    << C_SIGMA << "\t    ";
-            std::cout << "cmode:"     << C_MODE << "\t    ";
-            std::cout << "cmodename:" << distributionName(C_MODE) << "\t    ";
-
-            std::cout << "cputime:"   << time_spent << "\t   ";
-            std::cout << "t:"         << t << "\t   ";
-            std::cout << "mcs:"       << monte_carlo_steps << "\t   ";
-            std::cout << "lastrho:"   << rho << "\t    ";
-            std::cout << "avgrho:"    << avg_rho << "\t    ";
-            std::cout << "startrho:"  << start_rho << "\t    ";
-            std::cout << "cavg:"      << avg_c << "\t    ";
-
-            gsl_rng_free (r);
-            free(LATICE);
-            free(NEXT_STEP_LATICE);
-            return 0;
-        }
-
-        double C = distribution(C_MIU, C_SIGMA, C_MODE);
-        sum_c += C;
-
-        int first_i = randInRange(0, LATICE_SIZE);
-        int last_i = first_i + (C * LATICE_SIZE);
-
-        for (int i = 0; i < LATICE_SIZE; i++) {
-
-            if (first_i <= i && i <= last_i) {
-                int left  = (i-1) % LATICE_SIZE;
-                int right = (i+1) % LATICE_SIZE;
-
-                if ( LATICE[left] == LATICE[right] ) {
-                    NEXT_STEP_LATICE[i] = LATICE[left];
-                    updateMonteCarloSteps();
-                } else if ( W0 > randomUniform() ) {
-                    NEXT_STEP_LATICE[i] = swaped(LATICE[i]);
-                    updateMonteCarloSteps();
-                }
-            } else {
-                NEXT_STEP_LATICE[i] = LATICE[i];
+                std::cout << "cputime:"   << time_spent << "\n";
+                break;
             }
 
+            double C = distribution(C_MIU, C_SIGMA, C_MODE);
+            sum_c += C;
+
+            int first_i = randInRange(0, LATICE_SIZE);
+            int last_i = first_i + (C * LATICE_SIZE);
+
+            for (int i = 0; i < LATICE_SIZE; i++) {
+
+                if (first_i <= i && i <= last_i) {
+                    int left  = (i-1) % LATICE_SIZE;
+                    int right = (i+1) % LATICE_SIZE;
+
+                    if ( LATICE[left] == LATICE[right] ) {
+                        NEXT_STEP_LATICE[i] = LATICE[left];
+                        updateMonteCarloSteps();
+                    } else if ( W0 > randomUniform() ) {
+                        NEXT_STEP_LATICE[i] = swaped(LATICE[i]);
+                        updateMonteCarloSteps();
+                    }
+                } else {
+                    NEXT_STEP_LATICE[i] = LATICE[i];
+                }
+
+            }
+
+            std::swap(LATICE, NEXT_STEP_LATICE);
         }
-
-        std::swap(LATICE, NEXT_STEP_LATICE);
-
+    
     }
-    printf("ERROR!");
-    return 1;
+    gsl_rng_free (r);
+    free(LATICE);
+    free(NEXT_STEP_LATICE);
+
+    return 0;
 }
