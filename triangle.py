@@ -14,7 +14,7 @@ l = 100
 verbose = 0
 averages = 100
 
-if os.system("gcc main.cpp -o main -lstdc++ -lgsl -lgslcblas") == 0:
+if os.system("gcc main.cpp -o main -lstdc++ -lgsl -lgslcblas -lm") == 0:
   cmodename = 3
   for w0 in W0_RANGE:
     for cmean in CM_RANGE:
