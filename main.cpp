@@ -6,8 +6,6 @@
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 
-#include "optionparser.h"
-
 #define SPIN_UP 0
 #define SPIN_DOWN 1
 
@@ -173,7 +171,7 @@ void displayHelp() {
         << "[cmean]     - Mean value of c-parameter, (flt), [0,1]\n"
         << "[csigma]    - C-parameter's standard deviation (or c=[cmean-csigma; cmean+sigma]), (flt), [0,1]\n"
         << "[cmodename] - C-mode: 0-well / 1-gaussian / 2-uniform / 3-triangle, (int), {0,1,2,3}\n"
-        << "[verbose]   - Display detailed system progression, (int), {0,1}\n"    
+        << "[verbose]   - Display detailed system progression, (int), {0,1}\n"
     ;
 }
 
@@ -200,29 +198,29 @@ int main(int argc, const char * argv[]) {
     }
 
     gsl_rng_env_setup();
-    
+
     T = gsl_rng_mt19937;
     r = gsl_rng_alloc (T);
-    
+
     begin = clock();
-    
+
     short * LATICE           = (short *)malloc(LATICE_SIZE*sizeof(short));;
     short * NEXT_STEP_LATICE = (short *)malloc(LATICE_SIZE*sizeof(short));;
-    
+
     initAntiferromagnet(LATICE);
-    
+
     double start_rho = bondDensity(LATICE);
     double rho=0, sum_rho=0;
     double sum_c = 0;
-    
+
     for (int t = 1; t <= MAX_TIME; t++) {
         if (VERBOSE) {
             arrPrint(LATICE);printf("\n");
         }
-        
+
         rho = bondDensity(LATICE);
         sum_rho += rho;
-        
+
         if (rho == 0.0 || t == MAX_TIME) {
             double avg_rho = sum_rho / (double)t;
             double avg_c = sum_c / (double)t;
@@ -235,7 +233,7 @@ int main(int argc, const char * argv[]) {
             std::cout << "csigma:"    << C_SIGMA << "\t    ";
             std::cout << "cmode:"     << C_MODE << "\t    ";
             std::cout << "cmodename:" << distributionName(C_MODE) << "\t    ";
-            
+
             std::cout << "cputime:"   << time_spent << "\t   ";
             std::cout << "t:"         << t << "\t   ";
             std::cout << "mcs:"       << monte_carlo_steps << "\t   ";
@@ -243,25 +241,25 @@ int main(int argc, const char * argv[]) {
             std::cout << "avgrho:"    << avg_rho << "\t    ";
             std::cout << "startrho:"  << start_rho << "\t    ";
             std::cout << "cavg:"      << avg_c << "\t    ";
-            
+
             gsl_rng_free (r);
             free(LATICE);
             free(NEXT_STEP_LATICE);
             return 0;
         }
-        
+
         double C = distribution(C_MIU, C_SIGMA, C_MODE);
         sum_c += C;
-        
+
         int first_i = randInRange(0, LATICE_SIZE);
         int last_i = first_i + (C * LATICE_SIZE);
-        
+
         for (int i = 0; i < LATICE_SIZE; i++) {
-            
+
             if (first_i <= i && i <= last_i) {
                 int left  = (i-1) % LATICE_SIZE;
                 int right = (i+1) % LATICE_SIZE;
-                
+
                 if ( LATICE[left] == LATICE[right] ) {
                     NEXT_STEP_LATICE[i] = LATICE[left];
                     updateMonteCarloSteps();
@@ -272,11 +270,11 @@ int main(int argc, const char * argv[]) {
             } else {
                 NEXT_STEP_LATICE[i] = LATICE[i];
             }
-            
+
         }
-        
+
         std::swap(LATICE, NEXT_STEP_LATICE);
-        
+
     }
     printf("ERROR!");
     return 1;
