@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <fstream>
+#include <unistd.h>
 
 
 #include <gsl/gsl_rng.h>
