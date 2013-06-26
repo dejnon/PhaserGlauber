@@ -9,6 +9,7 @@
 #include <time.h>
 #include <fstream>
 #include <unistd.h>
+#include <ios>
 
 
 #include <gsl/gsl_rng.h>
@@ -169,8 +170,13 @@ std::string distributionName(int mode)
     }
 }
 
-void updateMonteCarloSteps() {
+void updateMonteCarloSteps(bool reset = false) {
     static int spins_updated = 0;
+    if (reset) {
+        spins_updated = 0;
+        monte_carlo_steps = 0;
+        return;
+    }
     spins_updated++;
     if (spins_updated >= LATICE_SIZE) {
         monte_carlo_steps++;
@@ -218,9 +224,10 @@ int main(int argc, const char * argv[]) {
         AVERAGES = 10;
         VERBOSE = false;
     }
-    std::ofstream outputFile( argv[9] );
+    std::ofstream outputFile( argv[9] , std::ios::out | std::ios::app );
     std::cout << "CHECKING FILE\n";
-        if (!outputFile) {
+    std::cout << "Writing to: '" << argv[9] << "' \n";
+    if (!outputFile) {
         std::cout << argv[9] << "\n";
         printf("ERR");
         outputFile.close();
@@ -246,8 +253,10 @@ int main(int argc, const char * argv[]) {
     std::cout << "INIT SIMULATION\n";
 
     for (int a = 1; a <= AVERAGES; a++) {
-        std::cout << "AVERAGE: " << a << "\n";
+        std::cout << "RESET MCS: " << a << "\n";
+        updateMonteCarloSteps(true);
         
+        std::cout << "AVERAGE: " << a << "\n";
         initAntiferromagnet(LATICE);
         double start_rho = bondDensity(LATICE);
         double rho=0, sum_rho=0;
@@ -268,8 +277,7 @@ int main(int argc, const char * argv[]) {
                 outputFile << " " << t << " ";
                 outputFile << " " << monte_carlo_steps << " ";
                 outputFile << " " << matnetization(LATICE) << " ";
-                outputFile << " " << bondDensity(LATICE) << "\n";
-
+                outputFile << " " << rho << "\n";
                 std::cout << "cputime:"   << time_spent << "\n";
                 break;
             }
