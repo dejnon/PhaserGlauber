@@ -253,7 +253,7 @@ int main(int argc, const char * argv[]) {
     std::cout << "INIT SIMULATION\n";
 
     for (int a = 1; a <= AVERAGES; a++) {
-        std::cout << "RESET MCS: " << a << "\n";
+        std::cout << "RESET MCS: " << "\n";
         updateMonteCarloSteps(true);
         
         std::cout << "AVERAGE: " << a << "\n";

@@ -17,6 +17,7 @@ import subprocess
 import multiprocessing
 
 W0_RANGE = np.linspace(0.51, 1.0, 5)
+W0_RANGE = [W0_RANGE[0]]
 CM_RANGE = np.linspace(0.0, 1.0, 30)
 CS_RANGE = np.linspace(0.0, 1.0, 30)
 # MODE = [0,1,2,3] # - triangle
@@ -27,7 +28,7 @@ verbose = 0
 averages = 3
 cmodename = 3
 
-output_path = "./_w0-all_cmean-all_csigma-all_maxt-10-7_l-100_w0grain-5_cgrain-30/"
+output_path = "./_w0-0.51_cmean-all_csigma-all_maxt-10-7_l-100_w0grain-1_cgrain-30/"
 current_path = os.getcwd()
 
 if not os.path.exists(output_path):
