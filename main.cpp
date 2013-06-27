@@ -272,8 +272,6 @@ int main(int argc, const char * argv[]) {
             if (rho == 0.0 || t == MAX_TIME) {
                 end = clock();
                 time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-                outputFile << " " << C_MIU << " ";
-                outputFile << " " << C_SIGMA << " ";
                 outputFile << " " << t << " ";
                 outputFile << " " << monte_carlo_steps << " ";
                 outputFile << " " << matnetization(LATICE) << " ";
