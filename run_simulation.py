@@ -46,7 +46,7 @@ if os.system("gcc %s/main.cpp -o ../main -lstdc++ -lgsl -lgslcblas -lm" % curren
           simul = "%s/main %d %d %f %f %f %d %d %d %s" % (current_path, maxt, l, w0, cmean, csigma, cmodename, verbose, averages, filename)
           list_of_simulations.append(simul)
   # Run 12 instances at the time
-  pool = multiprocessing.Pool(16)
+  pool = multiprocessing.Pool(12)
   pool.map(run_simulation, list_of_simulations)
 
 
