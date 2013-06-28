@@ -81,9 +81,15 @@ void initFerromagnet(short int arr[]) {
 }
 
 void arrPrint(short int arr[]){
+    printf("[");
     for (int i = 0; i < LATICE_SIZE; i++) {
-        printf(" %d ", arr[i]);
+        if (i!=0){
+            printf(",%d", arr[i]);
+        } else {
+            printf("%d", arr[i]);
+        }
     }
+    printf("],");
 }
 
 short swaped(short val) {
